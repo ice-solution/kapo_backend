@@ -59,8 +59,12 @@
   - **請求體**:
     ```json
     {
-        "username": "your_username",
-        "password": "your_password"
+        "name":"keith",
+        "gender":"M",
+        "birth":"1991-03-11",
+        "phone":"24455666",
+        "email":"keith@gmail.com",
+        "password":"user_password"
     }
     ```
 
