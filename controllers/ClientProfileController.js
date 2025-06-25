@@ -2,7 +2,7 @@
 const ClientProfile = require('../models/clientProfile');
 
 exports.createClientProfile = async (req, res) => {
-    const { name, gender, birth, age, dropdownSelection, fingerprints } = req.body;
+    const { name, gender, birth, age, dropdownSelection, fingerprints, TRC, leftTotal, rightTotal, ringPercent } = req.body;
 
     // 檢查必填欄位
     if (!name || !gender || !birth || !age || !dropdownSelection || !fingerprints) {
@@ -23,7 +23,11 @@ exports.createClientProfile = async (req, res) => {
             age,
             dropdownSelection,
             owner, // 使用從 session 獲取的 owner ID
-            fingerprints // 包含手指圖像
+            fingerprints, // 包含手指圖像
+            TRC,
+            leftTotal,
+            rightTotal,
+            ringPercent
         });
 
         await newClientProfile.save();
@@ -134,6 +138,30 @@ exports.deleteClientProfile = async (req, res) => {
         return res.status(200).json({ message: '客戶檔案刪除成功' });
     } catch (error) {
         console.error('刪除客戶檔案時出錯:', error);
+        return res.status(500).json({ message: '伺服器錯誤' });
+    }
+};
+
+// 取得單一 clientProfile 並檢查 owner 權限
+exports.getClientProfileById = async (req, res) => {
+    const owner = req.session.userId; // 從 session 取得 owner ID
+    const { clientId } = req.params; // 從路由參數取得 clientId
+
+    if (!owner) {
+        return res.status(401).json({ message: '未授權，請先登入' });
+    }
+
+    try {
+        const clientProfile = await ClientProfile.findById(clientId);
+        if (!clientProfile) {
+            return res.status(404).json({ message: '客戶檔案未找到' });
+        }
+        if (clientProfile.owner.toString() !== owner) {
+            return res.status(403).json({ message: '您無權存取此客戶檔案' });
+        }
+        return res.status(200).json({ clientProfile });
+    } catch (error) {
+        console.error('取得客戶檔案時出錯:', error);
         return res.status(500).json({ message: '伺服器錯誤' });
     }
 };

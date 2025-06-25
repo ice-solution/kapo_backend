@@ -17,4 +17,6 @@ router.delete('/:id', ClientProfileController.deleteClientProfile);
 
 // 其他 CRUD 操作的路由可以在這裡添加
 
+router.get('/:clientId', ClientProfileController.getClientProfileById);
+
 module.exports = router;
