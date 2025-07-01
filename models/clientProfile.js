@@ -18,7 +18,7 @@ const clientProfileSchema = new mongoose.Schema({
     TRC: { type: Number },
     leftTotal: { type: Number },
     rightTotal: { type: Number },
-    ringPercent: ringPercentSchema,
+    ringPercent: [ringPercentSchema],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
     
