@@ -32,6 +32,7 @@ mongoose.set('debug', true);
 // 使用 body-parser 中介軟體
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 // 設定 session
 app.use(session({
