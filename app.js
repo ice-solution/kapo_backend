@@ -7,6 +7,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo'); // 如果使用 MongoDB 存儲 session
 const usersRoutes = require('./routes/users');
 const clientProfileRoutes = require('./routes/clientProfile');
+const reportsRoutes = require('./routes/reports');
 
 const Auth = require('./models/Auth'); // 引入 Auth 模型
 
@@ -49,6 +50,7 @@ app.use(session({
 // 設定路由
 app.use('/api/users', usersRoutes);
 app.use('/api/clientProfiles', clientProfileRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 4488;

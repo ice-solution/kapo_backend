@@ -95,7 +95,9 @@
         "fingerprints": [
             {
                 "hand": "right",
-                "img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+                "img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA...",
+                "ring": 1,
+                "fingerType": "loop"
             }
         ]
     }

@@ -1,0 +1,1239 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Kapo Backend API",
+    "description": "指紋識別系統後端 API 文檔",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@kapo.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4488",
+      "description": "開發環境"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "用戶唯一識別碼"
+          },
+          "name": {
+            "type": "string",
+            "description": "用戶姓名",
+            "example": "張三"
+          },
+          "gender": {
+            "type": "string",
+            "description": "性別",
+            "enum": ["male", "female", "other"],
+            "example": "male"
+          },
+          "birth": {
+            "type": "string",
+            "format": "date",
+            "description": "出生日期",
+            "example": "1990-01-01"
+          },
+          "phone": {
+            "type": "string",
+            "description": "電話號碼",
+            "example": "0912345678"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "電子郵件",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "密碼（加密後）"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "建立時間"
+          },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "修改時間"
+          }
+        },
+        "required": ["name", "gender", "birth", "phone", "email", "password"]
+      },
+      "ClientProfile": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "客戶檔案唯一識別碼"
+          },
+          "name": {
+            "type": "string",
+            "description": "客戶姓名",
+            "example": "李四"
+          },
+          "gender": {
+            "type": "string",
+            "description": "性別",
+            "enum": ["male", "female", "other"],
+            "example": "female"
+          },
+          "birth": {
+            "type": "string",
+            "format": "date",
+            "description": "出生日期",
+            "example": "1985-05-15"
+          },
+          "age": {
+            "type": "number",
+            "description": "年齡",
+            "example": 38
+          },
+          "dropdownSelection": {
+            "type": "string",
+            "description": "下拉選單選擇",
+            "example": "option1"
+          },
+          "owner": {
+            "type": "string",
+            "description": "擁有者用戶ID"
+          },
+          "fingerprints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "hand": {
+                  "type": "string",
+                  "description": "手部（left 或 right）",
+                  "example": "left"
+                },
+                "img": {
+                  "type": "string",
+                  "description": "指紋圖像（base64格式）"
+                },
+                "ring": {
+                  "type": "number",
+                  "description": "手號"
+                },
+                "fingerType": {
+                  "type": "string",
+                  "description": "指紋類型"
+                }
+              },
+              "required": ["hand", "img"]
+            }
+          },
+          "TRC": {
+            "type": "number",
+            "description": "TRC 數值",
+            "example": 150
+          },
+          "leftTotal": {
+            "type": "number",
+            "description": "左手總數",
+            "example": 75
+          },
+          "rightTotal": {
+            "type": "number",
+            "description": "右手總數",
+            "example": 75
+          },
+          "ringPercent": {
+            "type": "object",
+            "properties": {
+              "finger": {
+                "type": "number",
+                "description": "手指編號",
+                "example": 1
+              },
+              "percent": {
+                "type": "number",
+                "description": "百分比（可包含小數點）",
+                "example": 85.5
+              }
+            },
+            "required": ["finger", "percent"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "建立時間"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新時間"
+          }
+        },
+        "required": ["name", "gender", "birth", "age", "dropdownSelection", "fingerprints"]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "電子郵件",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "密碼",
+            "example": "password123"
+          }
+        },
+        "required": ["email", "password"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "錯誤訊息"
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "成功訊息"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "sessionAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "connect.sid"
+      }
+    }
+  },
+  "paths": {
+    "/api/users": {
+      "post": {
+        "tags": ["用戶管理"],
+        "summary": "建立新用戶",
+        "description": "註冊新用戶帳號",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              },
+              "example": {
+                "name": "張三",
+                "gender": "male",
+                "birth": "1990-01-01",
+                "phone": "0912345678",
+                "email": "user@example.com",
+                "password": "password123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "用戶建立成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "用戶創建成功"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "請求參數錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["用戶管理"],
+        "summary": "取得所有用戶",
+        "description": "取得系統中所有用戶的列表",
+        "responses": {
+          "200": {
+            "description": "成功取得用戶列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/User"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/login": {
+      "post": {
+        "tags": ["用戶管理"],
+        "summary": "用戶登入",
+        "description": "用戶使用電子郵件和密碼登入系統",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登入成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "登入成功"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登入失敗",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": ["用戶管理"],
+        "summary": "取得單一用戶",
+        "description": "根據用戶ID取得特定用戶資料",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "用戶ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功取得用戶資料",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用戶未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["用戶管理"],
+        "summary": "更新用戶資料",
+        "description": "更新特定用戶的資料",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "用戶ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "用戶更新成功"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用戶未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["用戶管理"],
+        "summary": "刪除用戶",
+        "description": "刪除特定用戶",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "用戶ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "刪除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用戶未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clientProfiles": {
+      "post": {
+        "tags": ["客戶檔案管理"],
+        "summary": "建立客戶檔案",
+        "description": "建立新的客戶檔案，包含指紋資料",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientProfile"
+              },
+              "example": {
+                "name": "李四",
+                "gender": "female",
+                "birth": "1985-05-15",
+                "age": 38,
+                "dropdownSelection": "option1",
+                "fingerprints": [
+                  {
+                    "hand": "left",
+                    "img": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+                    "ring": 1,
+                    "fingerType": "whorl"
+                  }
+                ],
+                "TRC": 150,
+                "leftTotal": 75,
+                "rightTotal": 75,
+                "ringPercent": {
+                  "finger": 1,
+                  "percent": 85.5
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "客戶檔案建立成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "客戶檔案創建成功"
+                    },
+                    "clientProfile": {
+                      "$ref": "#/components/schemas/ClientProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "請求參數錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clientProfiles/user": {
+      "get": {
+        "tags": ["客戶檔案管理"],
+        "summary": "取得用戶的所有客戶檔案",
+        "description": "取得當前登入用戶的所有客戶檔案，支援分頁",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "頁碼（預設為1）",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每頁數量（預設為10）",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功取得客戶檔案列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "profiles": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ClientProfile"
+                      }
+                    },
+                    "totalProfiles": {
+                      "type": "number",
+                      "description": "總檔案數量"
+                    },
+                    "totalPages": {
+                      "type": "number",
+                      "description": "總頁數"
+                    },
+                    "currentPage": {
+                      "type": "number",
+                      "description": "當前頁碼"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "未找到客戶檔案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clientProfiles/{clientId}": {
+      "get": {
+        "tags": ["客戶檔案管理"],
+        "summary": "取得單一客戶檔案",
+        "description": "根據客戶ID取得特定客戶檔案，並檢查權限",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "path",
+            "required": true,
+            "description": "客戶檔案ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功取得客戶檔案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clientProfile": {
+                      "$ref": "#/components/schemas/ClientProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "無權存取此客戶檔案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "客戶檔案未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clientProfiles/{id}": {
+      "put": {
+        "tags": ["客戶檔案管理"],
+        "summary": "更新客戶檔案",
+        "description": "更新特定客戶檔案的資料",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "客戶檔案ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientProfile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "客戶檔案更新成功"
+                    },
+                    "clientProfile": {
+                      "$ref": "#/components/schemas/ClientProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "無權修改此客戶檔案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "客戶檔案未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["客戶檔案管理"],
+        "summary": "刪除客戶檔案",
+        "description": "刪除特定客戶檔案",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "客戶檔案ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "刪除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "無權刪除此客戶檔案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "客戶檔案未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/{id}": {
+      "get": {
+        "tags": ["報告管理"],
+        "summary": "生成客戶指紋分析報告",
+        "description": "根據客戶檔案 ID 生成 PDF 格式的指紋分析報告",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "客戶檔案 ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功生成並返回 PDF 報告",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "description": "檔案下載標頭",
+                "schema": {
+                  "type": "string",
+                  "example": "attachment; filename=\"client-report-張三-1234567890.pdf\""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授權，請先登入",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "無權存取此客戶檔案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "客戶檔案未找到",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/upload/upload": {
+      "post": {
+        "tags": ["檔案上傳"],
+        "summary": "上傳圖片",
+        "description": "上傳圖片檔案到伺服器",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "要上傳的圖片檔案"
+                  }
+                },
+                "required": ["image"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "上傳成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "圖片上傳成功"
+                    },
+                    "file": {
+                      "type": "object",
+                      "properties": {
+                        "fieldname": {
+                          "type": "string",
+                          "example": "image"
+                        },
+                        "originalname": {
+                          "type": "string",
+                          "example": "fingerprint.jpg"
+                        },
+                        "encoding": {
+                          "type": "string",
+                          "example": "7bit"
+                        },
+                        "mimetype": {
+                          "type": "string",
+                          "example": "image/jpeg"
+                        },
+                        "destination": {
+                          "type": "string",
+                          "example": "uploads/"
+                        },
+                        "filename": {
+                          "type": "string",
+                          "example": "1703123456789.jpg"
+                        },
+                        "path": {
+                          "type": "string",
+                          "example": "uploads/1703123456789.jpg"
+                        },
+                        "size": {
+                          "type": "number",
+                          "example": 1024
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "未上傳圖片",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "伺服器錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "用戶管理",
+      "description": "用戶註冊、登入、查詢、更新和刪除相關操作"
+    },
+    {
+      "name": "客戶檔案管理",
+      "description": "客戶檔案的建立、查詢、更新和刪除相關操作"
+    },
+    {
+      "name": "檔案上傳",
+      "description": "檔案上傳相關操作"
+    },
+    {
+      "name": "報告管理",
+      "description": "客戶指紋分析報告生成相關操作"
+    }
+  ]
+} 
