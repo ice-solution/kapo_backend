@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  kapo-backend:
+    build: .
+    ports:
+      - "4488:4488"
+    environment:
+      - NODE_ENV=production
+      - PORT=4488
+      - MONGODB_URI=${MONGODB_URI}
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4488/api/users"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+
