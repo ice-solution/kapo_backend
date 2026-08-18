@@ -6,6 +6,7 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "create-test-data": "node scripts/createTestClientProfile.js",
+    "preview-report": "node scripts/previewThinkaProReport.js",
     "docker:build": "docker build -t kapo-backend .",
     "docker:run": "docker run -p 4488:4488 --env-file .env kapo-backend",
     "docker:compose": "docker-compose up -d",
