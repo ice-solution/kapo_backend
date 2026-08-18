@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用戶管理｜ThinkaPro 後台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kapo: { teal: '#2bb8c0', deep: '#1a3a42', gold: '#c4a06a', paper: '#f6f3ee' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-kapo-paper text-kapo-deep">
+    <header class="bg-white border-b border-black/5">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div>
+                <p class="text-xs tracking-[0.3em] text-kapo-gold">THINKAPRO ADMIN</p>
+                <h1 class="text-xl font-semibold">用戶管理</h1>
+            </div>
+            <div class="flex items-center gap-3 text-sm">
+                <span id="adminName" class="text-slate-500"></span>
+                <button id="logoutBtn" class="rounded-lg border border-slate-200 px-3 py-1.5 hover:bg-slate-50">登出</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-8">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+            <input id="search" placeholder="搜尋姓名、Email 或電話" class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 outline-none focus:border-kapo-teal" />
+            <a href="/admin/user.html" class="inline-flex justify-center rounded-lg bg-kapo-teal text-white px-4 py-2.5 font-medium hover:bg-cyan-600">新增用戶</a>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-black/5 overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-500">
+                    <tr>
+                        <th class="text-left font-medium px-4 py-3">姓名</th>
+                        <th class="text-left font-medium px-4 py-3">Email</th>
+                        <th class="text-left font-medium px-4 py-3">電話</th>
+                        <th class="text-left font-medium px-4 py-3">性別</th>
+                        <th class="text-left font-medium px-4 py-3">客戶數</th>
+                        <th class="text-left font-medium px-4 py-3">建立時間</th>
+                        <th class="px-4 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody id="userRows"></tbody>
+            </table>
+            <div id="empty" class="hidden px-4 py-12 text-center text-slate-400">尚無用戶</div>
+        </div>
+
+        <div class="flex items-center justify-between mt-4 text-sm text-slate-500">
+            <span id="pageInfo"></span>
+            <div class="flex gap-2">
+                <button id="prevBtn" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 disabled:opacity-40">上一頁</button>
+                <button id="nextBtn" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 disabled:opacity-40">下一頁</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/admin/js/api.js"></script>
+    <script>
+        let page = 1;
+        let totalPages = 1;
+        let timer;
+
+        async function loadUsers() {
+            const q = document.getElementById('search').value.trim();
+            const data = await api(`/api/admin/users?page=${page}&limit=12&q=${encodeURIComponent(q)}`);
+            totalPages = data.totalPages;
+            const tbody = document.getElementById('userRows');
+            tbody.innerHTML = data.users.map((user) => `
+                <tr class="border-t border-slate-100 hover:bg-slate-50/70">
+                    <td class="px-4 py-3 font-medium">${escapeHtml(user.name)}</td>
+                    <td class="px-4 py-3">${escapeHtml(user.email)}</td>
+                    <td class="px-4 py-3">${escapeHtml(user.phone)}</td>
+                    <td class="px-4 py-3">${escapeHtml(genderLabel(user.gender))}</td>
+                    <td class="px-4 py-3">${user.clientProfileCount}</td>
+                    <td class="px-4 py-3">${formatDateTime(user.created_at)}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a class="text-kapo-teal hover:underline" href="/admin/user.html?id=${encodeURIComponent(user._id)}">查看</a>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('empty').classList.toggle('hidden', data.users.length > 0);
+            document.getElementById('pageInfo').textContent = `共 ${data.total} 位用戶，第 ${data.page} / ${data.totalPages} 頁`;
+            document.getElementById('prevBtn').disabled = page <= 1;
+            document.getElementById('nextBtn').disabled = page >= totalPages;
+        }
+
+        document.getElementById('search').addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                page = 1;
+                loadUsers().catch((error) => alert(error.message));
+            }, 250);
+        });
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (page > 1) {
+                page -= 1;
+                loadUsers();
+            }
+        });
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (page < totalPages) {
+                page += 1;
+                loadUsers();
+            }
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => logoutAdmin());
+
+        requireAdmin().then((admin) => {
+            document.getElementById('adminName').textContent = admin.username;
+            return loadUsers();
+        }).catch((error) => {
+            if (!String(error.message).includes('未授權')) alert(error.message);
+        });
+    </script>
+</body>
+</html>

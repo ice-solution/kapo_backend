@@ -15,7 +15,7 @@ services:
     volumes:
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4488/api/users"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4488/health', (r) => { r.resume(); process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用戶資料｜ThinkaPro 後台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kapo: { teal: '#2bb8c0', deep: '#1a3a42', gold: '#c4a06a', paper: '#f6f3ee' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-kapo-paper text-kapo-deep">
+    <header class="bg-white border-b border-black/5">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div>
+                <a href="/admin/index.html" class="text-xs tracking-[0.3em] text-kapo-gold">THINKAPRO ADMIN</a>
+                <h1 id="pageTitle" class="text-xl font-semibold">新增用戶</h1>
+            </div>
+            <a href="/admin/index.html" class="text-sm text-slate-500 hover:text-kapo-deep">返回列表</a>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-8 grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr]">
+        <section class="bg-white rounded-2xl border border-black/5 p-6">
+            <h2 class="font-semibold mb-4">登入帳號</h2>
+            <form id="userForm" class="space-y-4">
+                <label class="block text-sm">姓名
+                    <input name="name" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-kapo-teal" />
+                </label>
+                <label class="block text-sm">性別
+                    <select name="gender" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-kapo-teal">
+                        <option value="male">男</option>
+                        <option value="female">女</option>
+                        <option value="other">其他</option>
+                    </select>
+                </label>
+                <label class="block text-sm">出生日期
+                    <input name="birth" type="date" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-kapo-teal" />
+                </label>
+                <label class="block text-sm">電話
+                    <input name="phone" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-kapo-teal" />
+                </label>
+                <label class="block text-sm">Email
+                    <input name="email" type="email" required class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-kapo-teal" />
+                </label>
+                <label class="block text-sm">密碼
+                    <input name="password" type="password" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-kapo-teal" />
+                    <span id="passwordHint" class="block mt-1 text-xs text-slate-400">編輯時留空代表不更改密碼</span>
+                </label>
+                <p id="formMsg" class="hidden text-sm"></p>
+                <div class="flex gap-3">
+                    <button type="submit" class="rounded-lg bg-kapo-teal text-white px-4 py-2.5 font-medium hover:bg-cyan-600">儲存</button>
+                    <button id="deleteBtn" type="button" class="hidden rounded-lg border border-red-200 text-red-600 px-4 py-2.5 hover:bg-red-50">刪除用戶</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="profilesPanel" class="hidden bg-white rounded-2xl border border-black/5 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold">此用戶建立的客戶資料</h2>
+                <span id="profileCount" class="text-sm text-slate-400"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="text-slate-500">
+                        <tr>
+                            <th class="text-left font-medium py-2">客戶姓名</th>
+                            <th class="text-left font-medium py-2">性別</th>
+                            <th class="text-left font-medium py-2">年齡</th>
+                            <th class="text-left font-medium py-2">TRC</th>
+                            <th class="text-left font-medium py-2">建立時間</th>
+                            <th class="py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="profileRows"></tbody>
+                </table>
+            </div>
+            <p id="profileEmpty" class="hidden py-10 text-center text-slate-400">尚未建立客戶檔案</p>
+        </section>
+    </main>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/40 p-4 z-20">
+        <div class="max-w-2xl mx-auto mt-16 bg-white rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold">客戶檔案</h3>
+                <button id="closeModal" class="text-slate-400 hover:text-kapo-deep">關閉</button>
+            </div>
+            <div id="modalBody" class="text-sm space-y-3"></div>
+        </div>
+    </div>
+
+    <script src="/admin/js/api.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('id');
+        const form = document.getElementById('userForm');
+        const msg = document.getElementById('formMsg');
+
+        function showMsg(text, ok) {
+            msg.textContent = text;
+            msg.className = ok ? 'text-sm text-emerald-600' : 'text-sm text-red-600';
+        }
+
+        async function loadUser() {
+            const data = await api(`/api/admin/users/${userId}`);
+            const user = data.user;
+            form.name.value = user.name || '';
+            form.gender.value = user.gender || 'male';
+            form.birth.value = toDateInput(user.birth);
+            form.phone.value = user.phone || '';
+            form.email.value = user.email || '';
+            document.getElementById('pageTitle').textContent = user.name;
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            document.getElementById('profilesPanel').classList.remove('hidden');
+            await loadProfiles();
+        }
+
+        async function loadProfiles() {
+            const data = await api(`/api/admin/users/${userId}/clientProfiles`);
+            const rows = document.getElementById('profileRows');
+            rows.innerHTML = data.profiles.map((profile) => `
+                <tr class="border-t border-slate-100">
+                    <td class="py-3">${escapeHtml(profile.name)}</td>
+                    <td class="py-3">${escapeHtml(genderLabel(profile.gender))}</td>
+                    <td class="py-3">${profile.age ?? '—'}</td>
+                    <td class="py-3">${profile.TRC ?? '—'}</td>
+                    <td class="py-3">${formatDateTime(profile.createdAt)}</td>
+                    <td class="py-3 text-right">
+                        <button data-id="${escapeHtml(profile._id)}" class="view-profile text-kapo-teal hover:underline">詳情</button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('profileEmpty').classList.toggle('hidden', data.profiles.length > 0);
+            document.getElementById('profileCount').textContent = `${data.profiles.length} 筆`;
+            rows.querySelectorAll('.view-profile').forEach((btn) => {
+                btn.addEventListener('click', () => openProfile(btn.dataset.id));
+            });
+        }
+
+        async function openProfile(id) {
+            const data = await api(`/api/admin/clientProfiles/${id}`);
+            const profile = data.clientProfile;
+            const fps = (profile.fingerprints || []).map((fp) =>
+                `<li>${escapeHtml(fp.hand || '—')}｜${escapeHtml(fp.fingerType || '未分類')}｜脊線 ${escapeHtml(fp.ring ?? '—')}</li>`
+            ).join('');
+            document.getElementById('modalBody').innerHTML = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div>姓名：${escapeHtml(profile.name)}</div>
+                    <div>性別：${escapeHtml(genderLabel(profile.gender))}</div>
+                    <div>出生：${formatDate(profile.birth)}</div>
+                    <div>年齡：${profile.age ?? '—'}</div>
+                    <div>TRC：${profile.TRC ?? '—'}</div>
+                    <div>左手：${profile.leftTotal ?? '—'}</div>
+                    <div>右手：${profile.rightTotal ?? '—'}</div>
+                    <div>選項：${escapeHtml(profile.dropdownSelection || '—')}</div>
+                </div>
+                <div>
+                    <p class="font-medium mb-1">指紋資料</p>
+                    <ul class="list-disc pl-5 space-y-1">${fps || '<li>無</li>'}</ul>
+                </div>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const payload = {
+                name: form.name.value.trim(),
+                gender: form.gender.value,
+                birth: form.birth.value,
+                phone: form.phone.value.trim(),
+                email: form.email.value.trim()
+            };
+            if (form.password.value) payload.password = form.password.value;
+            try {
+                if (userId) {
+                    await api(`/api/admin/users/${userId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(payload)
+                    });
+                    showMsg('已更新', true);
+                } else {
+                    if (!payload.password) {
+                        showMsg('新增用戶時密碼為必填', false);
+                        return;
+                    }
+                    const created = await api('/api/admin/users', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    window.location.href = `/admin/user.html?id=${created.user._id}`;
+                }
+            } catch (error) {
+                showMsg(error.message, false);
+            }
+        });
+
+        document.getElementById('deleteBtn').addEventListener('click', async () => {
+            if (!confirm('確定刪除此用戶？其建立的客戶檔案也會一併刪除。')) return;
+            try {
+                await api(`/api/admin/users/${userId}`, { method: 'DELETE' });
+                window.location.href = '/admin/index.html';
+            } catch (error) {
+                showMsg(error.message, false);
+            }
+        });
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('modal').classList.add('hidden');
+        });
+
+        requireAdmin().then(() => {
+            if (userId) {
+                document.getElementById('passwordHint').classList.remove('hidden');
+                form.password.required = false;
+                return loadUser();
+            }
+            document.getElementById('passwordHint').textContent = '新增時必填';
+            form.password.required = true;
+        }).catch((error) => {
+            if (!String(error.message).includes('未授權')) alert(error.message);
+        });
+    </script>
+</body>
+</html>

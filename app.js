@@ -8,6 +8,7 @@ const MongoStore = require('connect-mongo'); // 如果使用 MongoDB 存儲 sess
 const usersRoutes = require('./routes/users');
 const clientProfileRoutes = require('./routes/clientProfile');
 const reportsRoutes = require('./routes/reports');
+const adminRoutes = require('./routes/admin');
 
 const Auth = require('./models/Auth'); // 引入 Auth 模型
 
@@ -47,10 +48,19 @@ app.use(session({
     cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 天
 }));
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ ok: true });
+});
+
+app.get('/admin', (req, res) => {
+    res.redirect('/admin/login.html');
+});
+
 // 設定路由
 app.use('/api/users', usersRoutes);
 app.use('/api/clientProfiles', clientProfileRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 4488;

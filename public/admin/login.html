@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThinkaPro 後台登入</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kapo: {
+                            teal: '#2bb8c0',
+                            deep: '#1a3a42',
+                            gold: '#c4a06a',
+                            paper: '#f6f3ee'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-kapo-paper text-kapo-deep">
+    <div class="min-h-screen grid lg:grid-cols-2">
+        <section class="hidden lg:flex flex-col justify-between bg-kapo-deep text-white p-12">
+            <div class="text-kapo-gold tracking-[0.35em] text-sm">紋 THINKAPRO 露</div>
+            <div>
+                <h1 class="text-4xl font-semibold leading-tight">指紋潛能報告後台</h1>
+                <p class="mt-4 text-white/70 max-w-md">管理登入帳號，並查看每位用戶建立的客戶檔案。</p>
+            </div>
+            <p class="text-white/40 text-sm">Admin Console</p>
+        </section>
+        <section class="flex items-center justify-center p-6">
+            <form id="loginForm" class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-black/5 p-8">
+                <div class="mb-8">
+                    <p class="text-kapo-teal text-sm font-medium tracking-wide">ADMIN LOGIN</p>
+                    <h2 class="mt-2 text-2xl font-semibold">登入後台</h2>
+                </div>
+                <label class="block text-sm font-medium">帳號
+                    <input name="username" autocomplete="username" required class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-kapo-teal" />
+                </label>
+                <label class="block text-sm font-medium mt-4">密碼
+                    <input name="password" type="password" autocomplete="current-password" required class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-kapo-teal" />
+                </label>
+                <p id="error" class="hidden mt-4 text-sm text-red-600"></p>
+                <button type="submit" class="mt-6 w-full rounded-lg bg-kapo-teal text-white py-2.5 font-medium hover:bg-cyan-600">登入</button>
+            </form>
+        </section>
+    </div>
+    <script src="/admin/js/api.js"></script>
+    <script>
+        api('/api/admin/me').then(() => {
+            window.location.href = '/admin/index.html';
+        }).catch(() => {});
+
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const errorEl = document.getElementById('error');
+            errorEl.classList.add('hidden');
+            const form = event.target;
+            try {
+                await api('/api/admin/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username: form.username.value.trim(),
+                        password: form.password.value
+                    })
+                });
+                window.location.href = '/admin/index.html';
+            } catch (error) {
+                errorEl.textContent = error.message;
+                errorEl.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
