@@ -205,6 +205,7 @@ function renderThinkaProHtml(model) {
     src: url('${asset('fonts/NotoSansTC-VF.ttf')}') format('truetype');
     font-weight: 100 900;
     font-style: normal;
+    font-display: swap;
 }
 @page { size: A4 portrait; margin: 0; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
